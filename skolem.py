@@ -1,4 +1,7 @@
 import itertools
+import time
+import io
+import sys
 
 def numpair_validation(k):
     if k%4 == 2 or k%4 == 3:
@@ -8,11 +11,7 @@ def numpair_validation(k):
 def numpair_gen(k):
     
     numpair = []         
-    perm_dict = {}
-    i = 0
-    del_key = []
-    key_arr = []
-
+    perm_arr = []
     # generates array of permutatable values
     
     for n in range(1,k+1):
@@ -23,11 +22,7 @@ def numpair_gen(k):
 
     # uses a dict for convenience
     for perm in array:
-        key_arr.append(i)
-        perm_dict[i] = perm
-        i += 1
-        
-    perm_arr = list(perm_dict.values())
+        perm_arr.append(perm)
     
     return perm_arr
 
@@ -59,21 +54,18 @@ def numpair_filter(perm_arr):
     return perm_arr
         
 def skolem_gen(numpair, k):
-    
     # generates an empty array of false values.
-    
     skolem = [False] * 2 * k
 
-    for i in reversed(numpair):
+    for i in numpair:
         for n in range(len(skolem)):
             if n+i < len(skolem):
 
                 # if the values are empty, place an object in there
                 
                 if skolem[n] == False:
-                    if skolem[n+i] == False:
-                        skolem[n] = i; skolem[n+i] = i
-                        break
+                    skolem[n] = i; skolem[n+i] = i
+                    break
                     
     if not False in skolem:
         return skolem
@@ -86,25 +78,37 @@ def userinput(k = None):
 
     return(k)
 
-def everything(k):
-    
+def everything(k, arg = 0):
     if not k:
          return(0)
 
     # if output is possible, we go ahead and have some fun. well,
     # the computer isn't having fun, but yes.
     
-    perm_arr = numpair_filter(numpair_gen(k))
+    if arg == 0:
+        perm_arr = numpair_filter(numpair_gen(k))
+
+    elif arg == 1:
+        perm_arr = numpair_gen(k)
+
     skolem_arr = []
+    x = 0
 
     for perm in perm_arr:
         skolem = skolem_gen(perm, k)
         if skolem:
-            if not skolem in skolem_arr:
-                skolem_arr.append(skolem)
-                skolem_arr.append(skolem[::-1])
+            x += 1
+    return x
 
-    return len(skolem_arr)
+file_path = "executiontime.txt"
+arg = 0
 
-for i in range(1,17):
-    print(everything(userinput(i)))
+for arg in range(2):
+    for i in range(1,12):
+        time_start = time.time()
+        x = everything(userinput(i), arg)
+        time_elapsed = time.time()-time_start
+        file = open(file_path, "a")
+        file.write("\n" + str(arg) + ", " + str(i) + ", " + str(x) + ", " + str(time_elapsed))
+        file.close()
+
