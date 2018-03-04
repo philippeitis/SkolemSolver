@@ -30,7 +30,34 @@ def numpair_gen(k):
     perm_arr = list(perm_dict.values())
     
     return perm_arr
+
+def numpair_filter(perm_arr):
     
+    perm_dict = {}
+    i = 0
+    key_arr = []
+        
+    for perm in perm_arr:
+        key_arr.append(i)
+        perm_dict[i] = perm
+        i += 1
+
+    # removes all lists with a value n followed by n-1, as the second term
+    # both values would overlap. this prolly saves computing time. i think.
+    # maybe.
+    
+    for key in key_arr:
+        
+        eval_perm = perm_dict[key]
+        
+        if len(eval_perm) > 1:
+            if eval_perm[0]-1 == eval_perm[1]:
+                del perm_dict[key]
+        
+    perm_arr = list(perm_dict.values())
+    
+    return perm_arr
+        
 def skolem_gen(numpair, k):
     
     # generates an empty array of false values.
@@ -62,12 +89,12 @@ def userinput(k = None):
 def everything(k):
     
     if not k:
-         return("No possible skolem pairs exist.")
+         return(0)
 
     # if output is possible, we go ahead and have some fun. well,
     # the computer isn't having fun, but yes.
     
-    perm_arr = numpair_gen(k)
+    perm_arr = numpair_filter(numpair_gen(k))
     skolem_arr = []
 
     for perm in perm_arr:
@@ -77,10 +104,7 @@ def everything(k):
                 skolem_arr.append(skolem)
                 skolem_arr.append(skolem[::-1])
 
-    if not skolem_arr:
-        return("No possible skolem pairs exist.")
-
     return len(skolem_arr)
 
-for i in range(1,11):
+for i in range(1,17):
     print(everything(userinput(i)))
