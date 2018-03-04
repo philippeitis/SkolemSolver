@@ -125,8 +125,10 @@ def everything(k):
 file_path = "executiontimef.txt"
 
 for i in range(1,13):
-    time_start = time.time()'
+    time_start = time.time()
+    
     # you can safely remove i and the program will have you input a number manually from the command line
+    
     x = everything(userinput(i))
     time_elapsed = time.time()-time_start
     
