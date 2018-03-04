@@ -26,34 +26,6 @@ def numpair_gen(k):
         key_arr.append(i)
         perm_dict[i] = perm
         i += 1
-
-    # removes all reverse ordered lists, cuts the total number of lists to
-    # check by half (eg. 1,2,3,4 is equivilant to 4,3,2,1)
-    
-    for key in key_arr:
-        
-        perm = perm_dict[key]
-        perm = perm[::-1]
-        
-        if perm in perm_dict.values():
-            del perm_dict[key]
-            
-    # removes all lists with a value n followed by n-1, as the second term
-    # both values would overlap. this prolly saves computing time. i think.
-    # maybe.
-    
-    for key in perm_dict:
-        
-        eval_perm = perm_dict[key]
-        
-        if eval_perm[0]-1 == eval_perm[1]:
-            del_key.append(key)
-            
-        elif eval_perm[-1]-1 == eval_perm[-2]:
-            del_key.append(key)
-
-    for key in del_key:
-        del perm_dict[key]
         
     perm_arr = list(perm_dict.values())
     
@@ -108,7 +80,7 @@ def everything(k):
     if not skolem_arr:
         return("No possible skolem pairs exist.")
 
-    return skolem_arr
+    return len(skolem_arr)
 
 for i in range(1,11):
     print(everything(userinput(i)))
