@@ -20,70 +20,29 @@ def input_validation(k):
         return
     return k
 
-def permutation_gen(k):
-    
-    perm_initial = list(range(1,k+1))
-    perm_arr = []
-
-    # generates all possible orderings of the skolem
-    
-    for perm in itertools.permutations(perm_initial):
-        yield(perm)
-    
-def permutation_filter(perm_arr):
-
-    if len(perm_arr) == 1:
-        return perm_arr
-    
-    key_arr = list(range(len(perm_arr)))
-    perm_dict = dict((key, value) for (key, value) in zip(key_arr, perm_arr))
-    
-    # removes all lists with a value n followed by n-1, as the second term
-    # both values would overlap. this prolly saves computing time. i think.
-    # maybe.
-
-    # it removes about (n-1)! * 2n calculations or smth 
-
-    for key in key_arr:
-
-        eval_perm = perm_dict[key]
-
-        if eval_perm[0]-1 == eval_perm[1]:
-            del perm_dict[key]
-
-    perm_arr = list(perm_dict.values())
-
-    return perm_arr
+def permutation_gen(k):    
+    for perm in itertools.permutations(list(range(1,k+1))):
+        yield list(perm)
 
 def skolem_gen(perm, k):
-    skolem = [False] * 2 * k
     pos = 0
-    
+    skolem = [False] * 2 * k
+
     for perm_num in perm:
-        if pos + perm_num < 2*k:
-            # is there any way where I can test and run this at the same time to cut
-            # down on repeated steps?
-            
+        try:            
             if skolem[pos+perm_num]:
                 return False
              
-            # additionally, is it possible to update more than one element in a list at a time?
-            # is it worth trying?
             skolem[pos] = perm_num
-   
             skolem[pos+perm_num] = perm_num
             
             # This updates the position until an empty value for pos is found
-            while  pos < 2*k and skolem[pos]:
+            while pos < 2*k and skolem[pos]:
                 pos += 1
-        
-    return all(skolem)
-
-# might be faster than the regular all function, might not be faster.
-def p_all(arr):
-    for n in arr:
-        if not n:
+                
+        except:
             return False
+    # this might have to be a call to all, but it seems to work fine now
     return True
 
 # speed gains r here: maybe pregen the skolem false array?
@@ -99,22 +58,16 @@ def recursive_skolem_gen(perm, k, pos = 0, skolem = None):
 
     if perm:
         # call the list element just once to save time
-        perm_num = perm[0]
-        
-        if pos + perm_num < 2*k:
-            
-            # is there any way where I can test and run this at the same time to cut
-            # down on repeated steps?
+        try:
+            perm_num = perm[0]            
             
             if skolem[pos+perm_num]:
-                
                 return False
              
             # additionally, is it possible to update more than one element in a list at a time?
             # is it worth trying?
             
             skolem[pos] = perm_num
-   
             skolem[pos+perm_num] = perm_num
             
             # any better way of calling perm and then deleting it in the same step? pop takes longer
@@ -124,12 +77,13 @@ def recursive_skolem_gen(perm, k, pos = 0, skolem = None):
 
             if not perm:
                 return False
-            # This updates the position until an empty value for pos is found
+            
             while skolem[pos]:
                 pos += 1
-                
+            
             recursive_skolem_gen(perm, k, pos, skolem) 
-
+        except:
+            return False
     if not perm:
         # can use p_all or regular all, whichever one is faster.
         # this just checks if it's a valid sequence
@@ -150,24 +104,23 @@ def everything(k, arg = 0):
 
     if k == 1:
         return 1
-
+    skolem = [False] * 2 * k
     if arg == 0:
         for perm in permutation_gen(k):
-            perm = list(perm)
             if not perm[0]-1 == perm[1]:
                 if skolem_gen(perm, k):
                     x += 1
         return(x)
     if arg == 1:
         for perm in permutation_gen(k):
-            perm = list(perm)
             if not perm[0]-1 == perm[1]:
                 if recursive_skolem_gen(perm, k):
                     x += 1
         return(x)
 file_path = "executiontime.txt"
 
-cProfile.run('everything(4)')
+cProfile.run('everything(9,0)')
+cProfile.run('everything(9,1)')
 
 for i in range(1,14):
     for arg in range(2):
@@ -175,8 +128,8 @@ for i in range(1,14):
         x = everything(i,arg)
         time_elapsed = time.time()-time_start
         if arg == 0:
-            print("non recursive", end = " ")
+            print("non recursive: ", end = " ")
         elif arg == 1:
-            print("recursive", end = " ")
+            print("recursive: ", end = "     ")
         print(x, end = " ")
         print(time_elapsed)
