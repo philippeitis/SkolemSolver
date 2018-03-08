@@ -78,7 +78,7 @@ def skolem_gen(perm, k):
 
     return all(skolem)
 
-# might be faster, might not be faster.
+# might be faster than the regular all function, might not be faster.
 def p_all(arr):
     for n in arr:
         if not n:
@@ -88,30 +88,41 @@ def p_all(arr):
 # speed gains r here: maybe pregen the skolem false array?
 
 def recursive_skolem_gen(perm, k, pos = 0, skolem = None):
-    # i avoid use len() to prevent uneeded len calls which make the program slower
+    # i avoid using len() to prevent uneeded len calls which make the program slower
+    
+    # generates a skolem array: doesn't seem to work when it's fed from everything()
+    # not sure about why it doesn't work.
+    
     if not skolem:
         skolem = [False] * 2 * k
 
     if perm:
-        # call the list element just once
+        # call the list element just once to save time
         perm_num = perm[0]
-
+        
         if pos + perm_num < 2*k:
-
+            
+            # is there any way where I can test and run this at the same time to cut
+            # down on repeated steps?
+            
             if skolem[pos+perm_num]:
                 return False
-
+             
+            # additionally, is it possible to update more than one element in a list at a time?
+            # is it worth trying?
+            
             skolem[pos] = perm_num
    
             skolem[pos+perm_num] = perm_num
-
+            
+            # any better way of calling perm and then deleting it in the same step? pop takes longer
             del perm[0]
+            
+            # Why does this work? Not a question for Peter, just not quite sure either
 
             if not perm:
-                return False   
-
-            # Why does this work?
-
+                return False
+            # This updates the position until an empty value for pos is found
             while skolem[pos]:
                 pos += 1
                 
@@ -119,6 +130,7 @@ def recursive_skolem_gen(perm, k, pos = 0, skolem = None):
 
     if not perm:
         # can use p_all or regular all, whichever one is faster.
+        # this just checks if it's a valid sequence
         return all(skolem)
 
 # this class just handles everything because i wanted to use the return feature
