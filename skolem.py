@@ -56,26 +56,27 @@ def permutation_filter(perm_arr):
     return perm_arr
 
 def skolem_gen(perm, k):
+    skolem = [False] * 2 * k
+    pos = 0
     
-    k2 = 2 * k
-    
-    # generates an empty array of false values.
-    
-    skolem = [False] * k2 
-
-    for i in perm:
-        for n in range(k2):
-            if n+i < (k2):
-
-                # if the values are empty, place an object in there
-
-                if skolem[n] == False:
-                    skolem[n] = i; skolem[n+i] = i
-                    break
-
-    # essentially, if it's not a valid skolem array, at least one value will be false,
-    # thus we can reject the value
-
+    for perm_num in perm:
+        if pos + perm_num < 2*k:
+            # is there any way where I can test and run this at the same time to cut
+            # down on repeated steps?
+            
+            if skolem[pos+perm_num]:
+                return False
+             
+            # additionally, is it possible to update more than one element in a list at a time?
+            # is it worth trying?
+            skolem[pos] = perm_num
+   
+            skolem[pos+perm_num] = perm_num
+            
+            # This updates the position until an empty value for pos is found
+            while  pos < 2*k and skolem[pos]:
+                pos += 1
+        
     return all(skolem)
 
 # might be faster than the regular all function, might not be faster.
@@ -106,6 +107,7 @@ def recursive_skolem_gen(perm, k, pos = 0, skolem = None):
             # down on repeated steps?
             
             if skolem[pos+perm_num]:
+                
                 return False
              
             # additionally, is it possible to update more than one element in a list at a time?
@@ -135,7 +137,7 @@ def recursive_skolem_gen(perm, k, pos = 0, skolem = None):
 
 # this class just handles everything because i wanted to use the return feature
 
-def everything(k):
+def everything(k, arg = 0):
     
     k = userinput(k)
     
@@ -148,21 +150,33 @@ def everything(k):
 
     if k == 1:
         return 1
-    
-    for perm in permutation_gen(k):
-        perm = list(perm)
-        if not perm[0]-1 == perm[1]:
-            if recursive_skolem_gen(perm, k):
-                x += 1
-    return(x)
 
+    if arg == 0:
+        for perm in permutation_gen(k):
+            perm = list(perm)
+            if not perm[0]-1 == perm[1]:
+                if skolem_gen(perm, k):
+                    x += 1
+        return(x)
+    if arg == 1:
+        for perm in permutation_gen(k):
+            perm = list(perm)
+            if not perm[0]-1 == perm[1]:
+                if recursive_skolem_gen(perm, k):
+                    x += 1
+        return(x)
 file_path = "executiontime.txt"
 
-cProfile.run('everything(9)')
+cProfile.run('everything(4)')
 
 for i in range(1,14):
-    time_start = time.time()
-    x = everything(i)
-    time_elapsed = time.time()-time_start
-    print(x, end = " ")
-    print(time_elapsed)
+    for arg in range(2):
+        time_start = time.time()
+        x = everything(i,arg)
+        time_elapsed = time.time()-time_start
+        if arg == 0:
+            print("non recursive", end = " ")
+        elif arg == 1:
+            print("recursive", end = " ")
+        print(x, end = " ")
+        print(time_elapsed)
