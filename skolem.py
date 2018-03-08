@@ -20,9 +20,11 @@ def input_validation(k):
         return
     return k
 
+# no more performance can really be extracted from here, but this is where our next challenge would lie
 def permutation_gen(k):    
-    for perm in itertools.permutations(list(range(1,k+1))):
-        yield list(perm)
+    for perm in itertools.permutations(range(1,k+1)):
+        if not perm[0]-1 == perm[1]:
+            yield list(perm)
 
 def skolem_gen(perm, k):
     pos = 0
@@ -37,6 +39,8 @@ def skolem_gen(perm, k):
             skolem[pos+perm_num] = perm_num
             
             # This updates the position until an empty value for pos is found
+            # any better way to do this?
+            
             while pos < 2*k and skolem[pos]:
                 pos += 1
                 
@@ -44,8 +48,6 @@ def skolem_gen(perm, k):
             return False
     # this might have to be a call to all, but it seems to work fine now
     return True
-
-# speed gains r here: maybe pregen the skolem false array?
 
 def recursive_skolem_gen(perm, k, pos = 0, skolem = None):
     # i avoid using len() to prevent uneeded len calls which make the program slower
@@ -107,17 +109,14 @@ def everything(k, arg = 0):
     skolem = [False] * 2 * k
     if arg == 0:
         for perm in permutation_gen(k):
-            if not perm[0]-1 == perm[1]:
-                if skolem_gen(perm, k):
-                    x += 1
+            if skolem_gen(perm, k):
+                x += 1
         return(x)
     if arg == 1:
         for perm in permutation_gen(k):
-            if not perm[0]-1 == perm[1]:
-                if recursive_skolem_gen(perm, k):
-                    x += 1
+            if recursive_skolem_gen(perm, k):
+                x += 1
         return(x)
-file_path = "executiontime.txt"
 
 cProfile.run('everything(9,0)')
 cProfile.run('everything(9,1)')
