@@ -1,7 +1,6 @@
 import itertools
 import time
 import io
-import sys
 import cProfile
 
 def userinput(k = None): # usually called only once
@@ -17,9 +16,7 @@ def userinput(k = None): # usually called only once
             print("Enter a valid integer.")
                   
 def input_validation(k):
-    if k%4 == 2 or k%4 == 3:
-        return
-    if k < 1:
+    if k%4 == 2 or k%4 == 3 or k < 1:
         return
     return k
 
@@ -81,29 +78,52 @@ def skolem_gen(perm, k):
 
     return all(skolem)
 
+# might be faster, might not be faster.
+def p_all(arr):
+    for n in arr:
+        if not n:
+            return False
+    return True
+
+# speed gains r here: maybe pregen the skolem false array?
+
 def recursive_skolem_gen(perm, k, pos = 0, skolem = None):
+    # i avoid use len() to prevent uneeded len calls which make the program slower
     if not skolem:
         skolem = [False] * 2 * k
-        
+
     if perm:
-        if pos + perm[0] < 2*k:
-            skolem[pos] = perm[0]
-            skolem[pos+perm[0]] = perm[0]
+        # call the list element just once
+        perm_num = perm[0]
+
+        if pos + perm_num < 2*k:
+
+            if skolem[pos+perm_num]:
+                return False
+
+            skolem[pos] = perm_num
+   
+            skolem[pos+perm_num] = perm_num
+
             del perm[0]
-            
+
             if not perm:
-                return all(skolem)                    
+                return False   
+
+            # Why does this work?
 
             while skolem[pos]:
                 pos += 1
                 
-            recursive_skolem_gen(perm,k, pos, skolem) 
+            recursive_skolem_gen(perm, k, pos, skolem) 
 
-    return all(skolem)
+    if not perm:
+        # can use p_all or regular all, whichever one is faster.
+        return all(skolem)
 
 # this class just handles everything because i wanted to use the return feature
 
-def everything(k, arg = 1):
+def everything(k):
     
     k = userinput(k)
     
@@ -114,21 +134,23 @@ def everything(k, arg = 1):
 
     x = 0
 
+    if k == 1:
+        return 1
+    
     for perm in permutation_gen(k):
         perm = list(perm)
-        if recursive_skolem_gen(perm, k):
-            x += 1
-            
-    return x
+        if not perm[0]-1 == perm[1]:
+            if recursive_skolem_gen(perm, k):
+                x += 1
+    return(x)
+
 file_path = "executiontime.txt"
 
-#cProfile.run('everything(9)')
+cProfile.run('everything(9)')
 
-for arg in range(2):
-    for i in range(1,10):
-        time_start = time.time()
-        x = everything(i, arg)
-        time_elapsed = time.time()-time_start
-        file = open(file_path, "a")
-        file.write("\n" + str(arg) + ", " + str(i) + ", " + str(x) + ", " + str(time_elapsed))
-        file.close()
+for i in range(1,14):
+    time_start = time.time()
+    x = everything(i)
+    time_elapsed = time.time()-time_start
+    print(x, end = " ")
+    print(time_elapsed)
