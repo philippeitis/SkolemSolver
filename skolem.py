@@ -118,6 +118,7 @@ def everything(k, arg = 0):
                 x += 1
         return(x)
 
+
 cProfile.run('everything(9,0)')
 cProfile.run('everything(9,1)')
 
@@ -126,9 +127,15 @@ for i in range(1,14):
         time_start = time.time()
         x = everything(i,arg)
         time_elapsed = time.time()-time_start
+        file_name = "fastskolem.txt"
+        file = open(file_name,"a+")
         if arg == 0:
             print("non recursive: ", end = " ")
+            file.write("non recursive:  , ")
         elif arg == 1:
             print("recursive: ", end = "     ")
+            file.write("recursive:      , ")
+        file.write(str(x) + ", ")
+        file.write(str(time_elapsed) + "\n")
         print(x, end = " ")
         print(time_elapsed)
