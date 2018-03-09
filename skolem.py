@@ -99,19 +99,19 @@ def everything(k, arg = 0):
     
     if not k:
          return 0
-
+    if k == 1:
+        return 1
     # these arguments either filter the numbers given or don't.
 
     x = 0
-
-    if k == 1:
-        return 1
-    skolem = [False] * 2 * k
     if arg == 0:
-        for perm in permutation_gen(k):
-            if skolem_gen(perm, k):
-                x += 1
+        for perm in itertools.permutations(range(1,k+1)):
+            if not perm[0]-1 == perm[1]:
+                if skolem_gen(perm, k):
+                    x += 1
         return(x)
+
+
     if arg == 1:
         for perm in permutation_gen(k):
             if recursive_skolem_gen(perm, k):
