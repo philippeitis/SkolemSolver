@@ -26,7 +26,7 @@ def input_validation(k):
 # no more performance can really be extracted from here, but this is where our next challenge would lie
 def permutation_gen(k):    
     for perm in itertools.permutations(range(1,k+1)):
-        if not perm[0]-1 == perm[1]:
+        if perm[0]-1 != perm[1]:
             yield list(perm)
 
 def skolem_gen(perm, k):
@@ -109,7 +109,6 @@ def worker(k):
         return 1
 
     for perm in permutation_gen(k):
-        print(perm)
         if skolem_gen(perm, k):
             x += 1
     exit(x)
@@ -144,4 +143,6 @@ def everything(k = None):
     file.write("\n" + str(k) + ", " + str(return_val) + ", " + str(time_elapsed))
     file.close()
 
-cProfile.run("everything(4)")
+if __name__ == "__main__":
+    everything(12)
+    cProfile.run("everything(4)")

@@ -1,6 +1,7 @@
 import time
 import io
 import sys
+import itertools
 
 # skolem sequences are lists 2*k units long (so a skolem sequence of order 4 looks is 8 elements
 # long), with each number, n, from 1 to k, n units apart. One example of a 
@@ -17,15 +18,12 @@ import sys
 
 # if k is 2mod4 or 3mod4, there are no skolem sequences, so we can just like, not compute these
 def numpair_validation(k):
-    if k%4 == 2 or k%4 == 3:
-        return
-    return k
+    return k%4 not in (2, 3)
 
 # this generates all the possible skolem orderings (eg, 1 then 2 then 3 then 4) - note that this generates
 # them one at a time in order to save memory.
 
 def permutations (numpair):
-
     yield numpair
 
     if len(numpair) == 1:
@@ -42,20 +40,20 @@ def permutations (numpair):
 
 # this generates a list of numbers from 1 to k for the permutation function
 def numpair_gen(k):
-    
     # generates array of permutatable values
-    numpair = []
-    for n in range(1,k+1):
-        numpair.append(n)    
-    return numpair
+    return list(range(1,k+1))
 
 # this filters the permutations: if the second term is 1 smaller than the first term,
 # the sequence is invalid (eg: 4 3 _ _ 4 & 3 _ _ _ _ - as you can see, 4 and 3 would
 # share the same space and thus the sequence can be discarded. this improves performance
 # slightly (roughly 4%)
 
+def numpair_check(perm):
+    if len(perm) > 1:
+        return perm[0] - 1 != perm[1]
+    return True
+
 def numpair_filter(perm):
-          
     if len(perm) > 1:
         if perm[0]-1 == perm[1]:
             return
@@ -63,28 +61,27 @@ def numpair_filter(perm):
     return perm
         
 def skolem_gen(numpair, k):
-    
     # generates an empty array of false values, so that we can populate it with the skolem pairings
-    skolem = [False] * 2 * k
+    ls = 2 * k
+    skolem = [0] * ls
+    first_empty = 0
     
     # this goes over each number and places it into the first empty spot
     for i in numpair:
-        
-        for n in range(len(skolem)):
-            if n+i < len(skolem):
-
-                # if the first value is empty, place an object in there (this assumes that the generator
-                # has a valid skolem sequence
-                
-                if skolem[n] == False:
-                    skolem[n] = i; skolem[n+i] = i
-                    break
+        for n in range(first_empty, ls-i):
+            # if the first value is empty, place an object in there (this assumes that the generator
+            # has a valid skolem sequence
+            if not skolem[n]:
+                if skolem[n+i]:
+                    return
+                first_empty = n + 1
+                skolem[n] = i
+                skolem[n+i] = i
+                break
+        else:
+            return
     # if any value is false, this is not a valid skolem sequence, so we can discard it. otherwise,
-    # we can return a valid sequence
-    
-    if False in skolem:
-        return
-    
+    # we can return a valid sequence    
     return skolem
 
 # if you want to manually chose which number you're ordering or just plug one in, this allows for you to
@@ -94,16 +91,18 @@ def userinput(k = None):
     if not k:
         k = int(input("Skolem Ordering: "))
 
-    k = numpair_validation(k)
-
-    return(k)
+    if numpair_validation(k):
+        return k
+    return None
 
 # this just does everything in a function because the return feature is very helpful when you need to
 # break loops
 
 def everything(k):
     if not k:
-         return(0)
+         return 0
+    if k == 1:
+        return 1 if skolem_gen([1], 1) else 0
 
     # if output is possible, we go ahead and have some fun. well,
     # the computer isn't having fun, but yes.
@@ -113,12 +112,10 @@ def everything(k):
     # this goes over each permutation for k, filters it, and generates a skolem sequence. if a sequence
     # is returned, we iterate x. no array is used as this takes up a lot of memory for higher order skolem
     # sequences
-    
-    for perm in permutations(numpair_gen(k)):
-        perm = numpair_filter(perm)
-        if perm:
-            skolem = skolem_gen(perm, k)
-            if skolem:
+
+    for perm in itertools.permutations(numpair_gen(k)):
+        if perm[0] - 1 != perm[1]:
+            if skolem_gen(perm, k):
                 x += 1
     return x
 
