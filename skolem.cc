@@ -4,11 +4,7 @@
 
 
 int main() {
-    const int ColWidth = 24;
-    const int ColWidthk = 6;
-
-    // prints things
-
+    
     std::cout << "k, # of sequences, computational time" << std::endl;
 
     int permutation[] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
@@ -21,14 +17,15 @@ int main() {
            if(k%4 != 2 && k%4 != 3){
 
                 do {
-                    if(permutation[0]==permutation[1]+1 || permutation[-1]==permutation[-2]+1){}
-                    else{
+                    // Even putting ints before the arrays to save memory (I think)
+                    // register unsigned ints! look at how fancy i am
                     register unsigned int trials = 0;
                     register unsigned int pos = 0;
                     bool skolem[2*k]= {false};
 
                     for (register unsigned int x = 0; x < k; ++x) {
 
+                        // This checks if the element of the list that we want to check is occupied
                         if(skolem[pos+permutation[x]] || pos+permutation[x] >= 2*k) {
                             break;
                         }
@@ -43,8 +40,10 @@ int main() {
 
                     }
 
+                    // We don't need the array for this - we just need to know if the program has gone through all
+                    // the steps, like it should have
                     if(trials==k){++count;}
-    }
+
             } while (std::next_permutation(permutation,permutation+k));
         }
 
@@ -56,4 +55,3 @@ int main() {
 
     return 0;    
 }
-
