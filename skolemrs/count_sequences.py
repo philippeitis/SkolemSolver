@@ -45,13 +45,10 @@ if __name__ == '__main__':
     #     else:
     #         inv_map[v] = [k]
     # print(inv_map)
-    skolem_sequences = [1, 0, 0, 6, 10, 0, 0, 504, 2656, 0, 0, 455936, 3040560, 0, 0, 1400156768, 12248982496, 0, 0, 11435578798976, 123564928167168, 0, 0, 204776117691241344, 2634563519776965376, 0, 0]
-    for i, s in enumerate(skolem_sequences):
-        a, b = [2, 5.5]
-        if s != 0:
-            print(f"{i + 1}: {s - a*(b**(i+1))}")
+    skolem_numbers = [1, 0, 0, 6, 10, 0, 0, 504, 2656, 0, 0, 455936, 3040560, 0, 0, 1400156768, 12248982496, 0, 0,
+                      11435578798976, 123564928167168, 0, 0, 204776117691241344, 2634563519776965376, 0, 0]
 
-    # import itertools
+    import itertools
     # import math
     # for i in range(2, 14):
     #     perms = itertools.permutations(list(range(1, i+1)))
@@ -66,15 +63,36 @@ if __name__ == '__main__':
     #     print(skolem)
     #     first_symbols = collections.Counter([s[0] for s in sequences])
     #     last_symbols = collections.Counter([s[-1] for s in sequences])
-    #     print(first_symbols.most_common())
-    #     print(last_symbols.most_common())
-    #     for s in powerset(first_symbols.most_common()):
-    #         if sum([x[1] for x in s]) == len(sequences) // 2:
-    #             print("1st Half:", s)
-    #     for s in powerset(last_symbols.most_common()):
-    #         if sum([x[1] for x in s]) == len(sequences) // 2:
-    #             print("2nd Half:", s)
+    #     print(first_symbols.most_common(), last_symbols.most_common())
+    #     first_last_symbols = collections.Counter([(s[0], s[-1]) for s in sequences])
+    #     print(first_last_symbols.most_common())
+    #     print(len(first_last_symbols))
+        # for s in powerset(first_symbols.most_common()):
+        #     if sum([x[1] for x in s]) == len(sequences) // 2:
+        #         print("1st Half:", s)
+        # for s in powerset(last_symbols.most_common()):
+        #     if sum([x[1] for x in s]) == len(sequences) // 2:
+        #         print("2nd Half:", s)
 
+    sequences = read_file_to_sequences(9)
+    d = {}
+    nums = list(itertools.permutations(list(range(1, 10)), 2))
+    num_dict = {num: True for num in nums}
+    for a, b in nums:
+        for s in sequences:
+            skolem = to_skolem(s)
+            skol_str = str(skolem)
+            skol_rev = str(skolem[::-1])
+            if skol_rev in d:
+                rev = d[skol_rev]
+                if (s.index(a) < s.index(b)) == (rev.index(a) < rev.index(b)):
+                    num_dict[(a, b)] = False
+            else:
+                d[skol_str] = s
+        # print(s, to_skolem(s), to_skolem(s)[::-1])
+    for num in num_dict:
+        if num_dict[num]:
+            print(num)
     # print(to_skolem(sequences[0]))
     #
     # print(collections.Counter([s[0] for s in sequences]))
@@ -82,3 +100,14 @@ if __name__ == '__main__':
     #
     # print(collections.Counter([s[0] for s in sequences2]))
     # print(collections.Counter([s[-1] for s in sequences2]))
+    xlt = 0
+    xgt = 0
+    size = 4
+    for i in itertools.permutations(list(range(1, size + 1))):
+        x = 0
+        for j in range(1, size):
+            x |= (i.index(j) > i.index(j + 1)) << (size - j - 1)
+        xlt += 1 if x < 4 else 0
+        xgt += 1 if x >= 4 else 0
+        print(f"{x:03b}")
+    print(xlt == xgt)
