@@ -3,7 +3,8 @@ import time
 import io
 import cProfile
 
-def userinput(k = None): # usually called only once
+
+def userinput(k=None): # usually called only once
     
     if isinstance(k,int):
         return input_validation(k)
@@ -14,17 +15,19 @@ def userinput(k = None): # usually called only once
             return input_validation(k)
         except ValueError:
             print("Enter a valid integer.")
-                  
+
+
 def input_validation(k):
-    if k%4 == 2 or k%4 == 3 or k < 1:
+    if k % 4 == 2 or k % 4 == 3 or k < 1:
         return
     return k
 
 # no more performance can really be extracted from here, but this is where our next challenge would lie
-def permutation_gen(k):    
-    for perm in itertools.permutations(range(1,k+1)):
+def permutation_gen(k):
+    for perm in itertools.permutations(range(1, k+1)):
         if not perm[0]-1 == perm[1]:
             yield list(perm)
+
 
 def skolem_gen(perm, k):
     pos = 0
@@ -56,7 +59,8 @@ def skolem_gen(perm, k):
     #to have the program return the sequence
     #return skolem
 
-def recursive_skolem_gen(perm, k, pos = 0, skolem = None):
+
+def recursive_skolem_gen(perm, k, pos=0, skolem=None):
     # i avoid using len() to prevent uneeded len calls which make the program slower
     
     # generates a skolem array: doesn't seem to work when it's fed from everything()
@@ -98,9 +102,9 @@ def recursive_skolem_gen(perm, k, pos = 0, skolem = None):
         # this just checks if it's a valid sequence
         return all(skolem)
 
-# this class just handles everything because i wanted to use the return feature
 
-def everything(k, arg = 0):
+# this class just handles everything because i wanted to use the return feature
+def everything(k, arg=0):
     
     k = userinput(k)
     
@@ -116,33 +120,33 @@ def everything(k, arg = 0):
             if not perm[0]-1 == perm[1]:
                 if skolem_gen(perm, k):
                     x += 1
-        return(x)
-
+        return x
 
     if arg == 1:
         for perm in permutation_gen(k):
             if recursive_skolem_gen(perm, k):
                 x += 1
-        return(x)
+        return x
 
 
-cProfile.run('everything(9,0)')
-cProfile.run('everything(9,1)')
+if __name__ == '__main__':
+    cProfile.run('everything(9,0)')
+    cProfile.run('everything(9,1)')
 
-for i in range(1,13):
-    for arg in range(2):
-        time_start = time.time()
-        x = everything(i,arg)
-        time_elapsed = time.time()-time_start
-        file_name = "fastskolem.txt"
-        file = open(file_name,"a+")
-        if arg == 0:
-            print("non recursive: ", end = " ")
-            file.write("non recursive:  , ")
-        elif arg == 1:
-            print("recursive: ", end = "     ")
-            file.write("recursive:      , ")
-        file.write(str(x) + ", ")
-        file.write(str(time_elapsed) + "\n")
-        print(x, end = " ")
-        print(time_elapsed)
+    for i in range(1,13):
+        for arg in range(2):
+            time_start = time.time()
+            x = everything(i,arg)
+            time_elapsed = time.time()-time_start
+            file_name = "fastskolem.txt"
+            file = open(file_name,"a+")
+            if arg == 0:
+                print("non recursive: ", end = " ")
+                file.write("non recursive:  , ")
+            elif arg == 1:
+                print("recursive: ", end = "     ")
+                file.write("recursive:      , ")
+            file.write(str(x) + ", ")
+            file.write(str(time_elapsed) + "\n")
+            print(x, end = " ")
+            print(time_elapsed)
