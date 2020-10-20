@@ -1,11 +1,110 @@
 extern crate permutohedron;
-use std::fs::File;
-use std::io::{BufWriter, Write};
 use std::thread;
 
 use std::time::Instant;
 
-macro_rules! skolem_fn_mt_dual_head {
+#[allow(unused_macros)]
+macro_rules! mt_skolem_dual_head_tail {
+    ($k:expr) => {
+        {
+            fn skolem_check_no_alloc_min_shift(head1: u8, head2: u8, ordering: [u8; $k - 3], tail: u8) -> bool {
+                let (mut skolem, mut iters_so_far): (u64, u8) = if head1 == 1 {
+                    (1 << (head2 - 1), 3)
+                } else {
+                    ((1 << (head1 - 2)) | (1 << (head2-1)), 2)
+                };
+
+                for &i in &ordering {
+                    let x = skolem.trailing_ones() as u8;
+                    skolem >>= x;
+
+                    if (skolem & (1 << i)) != 0 {
+                        return false;
+                    }
+
+                    iters_so_far += x + 1;
+                    if iters_so_far > 2 * $k - i {
+                        return false;
+                    }
+
+                    skolem |= 1 << i;
+                    skolem >>= 1;
+                }
+
+                let x = skolem.trailing_ones() as u8;
+                skolem >>= x;
+
+                if (skolem & (1 << tail)) != 0 {
+                    return false;
+                }
+
+                iters_so_far + x + 1 <= 2 * $k - tail
+            }
+
+            fn check_skolem_head_tail(head1: u8, head2: u8, body: &[u8; $k - 3], tail: u8) -> usize {
+                let max_valid = ($k * 2 + 2) / 3;
+
+                if head1 - 1 == head2 || tail > max_valid {
+                    return 0;
+                }
+
+                let mut x = 0;
+
+                let mut body = body.clone();
+
+                for body in permutohedron::Heap::new(&mut body) {
+                    if skolem_check_no_alloc_min_shift(head1, head2, body, tail) {
+                        x += 1;
+                    }
+                }
+
+                x
+            }
+
+            fn check_all_skolem() -> usize {
+                if $k == 0 {
+                    return 0;
+                } else if $k == 1 {
+                    return 1;
+                } else if [2, 3].contains(&($k % 4)) {
+                    return 0;
+                }
+
+                let max_valid = ($k * 2 + 2) / 3;
+
+                let handlers: Vec<_> = (1u8..=$k).into_iter().map(|head1| {
+                    let subhandlers: Vec<_> = (1u8..=$k)
+                        .filter(|&x| x != head1 && x != head1 - 1)
+                        .map(|head2| {
+                            let subsubhandlers: Vec<_> = (1u8..=$k)
+                                .filter(|&x| x != head1 && x != head2 && x <= max_valid)
+                                .map(|tail| {
+                                    let vbody: Vec<u8> = (1u8..=$k).filter(|&j| j != head1 && j != head2 && j != tail).collect();
+                                    let mut body = [0; $k - 3];
+                                    body.clone_from_slice(&vbody);
+                                    thread::spawn(move || {
+                                        check_skolem_head_tail(head1, head2, &body, tail)
+                                    })
+                                }).collect();
+                               subsubhandlers
+                        }).collect();
+                    let collected: Vec<_> = subhandlers.into_iter().flatten().collect();
+                    collected
+                }).into_iter().flatten().collect();
+
+                handlers.into_iter().map(|x| x.join().unwrap()).sum()
+            }
+
+            let now = Instant::now();
+            let permutations = check_all_skolem();
+            let elapsed_time = now.elapsed().as_secs_f32();
+            println!("k = {:0>2}, permutations = {:0>5}, time = {}", $k, permutations, elapsed_time);
+        }
+    };
+}
+
+#[allow(unused_macros)]
+macro_rules! mt_skolem_dual_head {
     ($k:expr) => {
         {
             fn skolem_check_no_alloc_min_shift(head1: u8, head2: u8, ordering: [u8; $k - 2]) -> bool {
@@ -88,7 +187,8 @@ macro_rules! skolem_fn_mt_dual_head {
     };
 }
 
-macro_rules! skolem_fn_mt {
+#[allow(unused_macros)]
+macro_rules! mt_skolem_head {
     ($k:expr) => {
         {
             fn skolem_check_no_alloc_min_shift(head: u8, ordering: [u8; $k - 1]) -> bool {
@@ -162,14 +262,14 @@ macro_rules! skolem_fn_mt {
     };
 }
 
-macro_rules! skolem_fn {
+#[allow(unused_macros)]
+macro_rules! st_skolem {
     ($k:expr) => {
         {
+            use std::fs::File;
+            use std::io::{BufWriter, Write};
+
             fn skolem_check_no_alloc_min_shift(ordering: [u8; $k]) -> bool {
-                // let mut skolem: u32 = 1 << (ordering[0] - 1);
-                // let mut iters_so_far = 1;
-                //
-                // for &i in &ordering[1..] {
                 let mut skolem: u32 = 0;
                 let mut iters_so_far = 0;
 
@@ -221,7 +321,7 @@ macro_rules! skolem_fn {
             //     }
             //     true
             // }
-            //
+
             // fn skolem_check(ordering: [u8; $k], skolem: &mut [u8; 2*$k]) -> bool {
             //     skolem.iter_mut().for_each(|x| *x = 0);
             //     let mut first = 0;
@@ -264,7 +364,6 @@ macro_rules! skolem_fn {
                 for p in permutohedron::Heap::new(&mut p) {
                     if p[0] - 1 != p[1] && p[$k - 1] <= max_valid {
                         if skolem_check_no_alloc_min_shift(p) {
-                            // println!("{:?},", p);
                             x += 1;
                         }
                     }
@@ -272,13 +371,13 @@ macro_rules! skolem_fn {
                 x
             }
 
-            fn write_all_skolem_to_file() -> usize {
+            fn write_all_skolem_to_file() -> Result<usize, std::io::Error> {
                 if $k == 0 {
-                    return 0;
+                    return Ok(0);
                 } else if $k == 1 {
-                    return 1;
+                    return Ok(1);
                 } else if [2, 3].contains(&($k % 4)) {
-                    return 0;
+                    return Ok(0);
                 }
 
                 let mut x = 0;
@@ -286,8 +385,7 @@ macro_rules! skolem_fn {
                 let mut p = [0u8; $k];
                 p.iter_mut().zip((1u8..=$k).into_iter()).for_each(|(p, v)| *p = v);
                 let max_valid = ($k + 3) / 2;
-                let mut f = File::create(format!("skolem{}.txt", $k))
-                    .expect("Unable to create file");
+                let mut f = File::create(format!("skolem{}.txt", $k))?;
                 let mut f = BufWriter::new(f);
                 let max = ($k * 2 + 2) / 3;
                 for p in permutohedron::Heap::new(&mut p) {
@@ -296,13 +394,13 @@ macro_rules! skolem_fn {
                     }
                     if p[0] - 1 != p[1] && p[$k-1] <= max {
                         if skolem_check_no_alloc_min_shift(p) {
-                            f.write_all(format!("{:?}\n", p).as_bytes());
+                            f.write_all(format!("{:?}\n", p).as_bytes())?;
                             // println!("{:?},", p);
                             x += if p[0] == 1 {2} else {1};
                         }
                     }
                 }
-                x
+                Ok(x)
             }
 
             let now = Instant::now();
@@ -313,28 +411,13 @@ macro_rules! skolem_fn {
     };
 }
 
-macro_rules! skolem_fn_for_each {
-    ($($k:expr),+) => {
+macro_rules! macro_for_each {
+    ($x:ident; $($k:expr),+) => {
         $(
-            skolem_fn!($k);
+            $x!($k);
         )*
     };
-}
 
-macro_rules! skolem_mt_fn_for_each {
-    ($($k:expr),+) => {
-        $(
-            skolem_fn_mt!($k);
-        )*
-    };
-}
-
-macro_rules! skolem_mt_dual_head_for_each {
-    ($($k:expr),+) => {
-        $(
-            skolem_fn_mt_dual_head!($k);
-        )*
-    };
 }
 
 // fn skolem_gen(ordering: Vec<u8>, skolem: &mut Vec<u8>) -> bool {
@@ -471,7 +554,12 @@ macro_rules! skolem_mt_dual_head_for_each {
 // k = 12, permutations = 455936, time = 0.85736626
 // k = 13, permutations = 3040560, time = 11.101549
 fn main() {
-    skolem_mt_dual_head_for_each!(3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
+    macro_for_each!(mt_skolem_dual_head_tail; 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
+    macro_for_each!(mt_skolem_dual_head; 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
+    macro_for_each!(mt_skolem_head; 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
+    macro_for_each!(st_skolem; 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+
+    // skolem_mt_dual_head_for_each!(3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
     // skolem_mt_fn_for_each!(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
     // skolem_fn_for_each!(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
 }
